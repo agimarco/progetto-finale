@@ -92,9 +92,11 @@ class NoiseWrapper(gym.ActionWrapper):
         gym.ActionWrapper.__init__(self, env)
 
     def action(self, action):
-        # 5% noise (according to vel: 0.2, angle: 1)
-        action[0] += np.random.normal(0, 0.01)
-        action[1] += np.random.normal(0, 0.05)
+        # (according to vel: 0.2, angle: 1)
+        # 5% noise: 0.01, 0.05
+        # 1% noise: 0.002, 0.01
+        action[0] += np.random.normal(0, 0.002)
+        action[1] += np.random.normal(0, 0.01)
         return action
 
 class ResizeWrapper(gym.ObservationWrapper):
@@ -112,7 +114,6 @@ class ResizeWrapper(gym.ObservationWrapper):
         from PIL import Image
         return np.array(Image.fromarray(observation).resize((160,120)))
 
-
 class NormalizeWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         super(NormalizeWrapper, self).__init__(env)
@@ -126,3 +127,16 @@ class NormalizeWrapper(gym.ObservationWrapper):
             return obs
         else:
             return (obs - self.obs_lo) / (self.obs_hi - self.obs_lo)
+
+class ImgWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        super(ImgWrapper, self).__init__(env)
+        obs_shape = self.observation_space.shape
+        self.observation_space = spaces.Box(
+            self.observation_space.low[0, 0, 0],
+            self.observation_space.high[0, 0, 0],
+            [obs_shape[2], obs_shape[0], obs_shape[1]],
+            dtype=self.observation_space.dtype)
+
+    def observation(self, observation):
+        return observation.transpose(2, 0, 1)

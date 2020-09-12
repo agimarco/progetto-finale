@@ -5,13 +5,12 @@ from pyglet.window import key
 import numpy as np
 
 from gym_duckietown.envs import DuckietownEnv
-from my_utils import EasyObservation, DtRewardWrapper, MyDiscreteWrapperTrain, NoiseWrapper
+from my_utils import EasyObservation, DtRewardWrapper, MyDiscreteWrapperTrain, NoiseWrapper, ResizeWrapper
 
 from DDQN import DDQN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--weights-name', default='', help='used to set the weights name')
-parser.add_argument('--width', default=32, help='used to set the number of neurons for each layer in a mlp network')
+parser.add_argument('--details', default='', help='used to set the weights name')
 parser.add_argument('--map-name', default='loop_empty', help='to use a different map from that used in training \
     available maps: \n \
         straight_road\n \
@@ -25,7 +24,7 @@ parser.add_argument('--map-name', default='loop_empty', help='to use a different
 
 args = parser.parse_args()
 
-weights_name = "weights/ddqn_duckietown_weights" + args.weights_name + ".h5"
+weights_name = "weights/ddqn_duckietown_cnn_weights" + args.details + ".h5"
 
 # Create the environment 
 env = DuckietownEnv(
@@ -42,10 +41,10 @@ env = DuckietownEnv(
 # discrete actions, 4 value observation and modified reward
 env = NoiseWrapper(env)
 env = MyDiscreteWrapperTrain(env)
-env = EasyObservation(env)
+env = ResizeWrapper(env)
 env = DtRewardWrapper(env)
 
-model = DDQN(env, mlp_width=args.width)
+model = DDQN(env, cnn=True)
 model.load(weights_name)
 
 obs = env.reset()
