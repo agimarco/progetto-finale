@@ -10,7 +10,7 @@ from my_utils import EasyObservation, DtRewardWrapper, MyDiscreteWrapperTrain, N
 from DDQN import DDQN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--weights-name', default='', help='used to set the weights name')
+parser.add_argument('--details', default='', help='used to set the weights name')
 parser.add_argument('--width', default=32, help='used to set the number of neurons for each layer in a mlp network')
 parser.add_argument('--map-name', default='loop_empty', help='to use a different map from that used in training \
     available maps: \n \
@@ -25,7 +25,7 @@ parser.add_argument('--map-name', default='loop_empty', help='to use a different
 
 args = parser.parse_args()
 
-weights_name = "weights/ddqn_duckietown_weights" + args.weights_name + ".h5"
+weights_name = "weights/ddqn_duckietown_weights" + args.details + ".h5"
 
 # Create the environment 
 env = DuckietownEnv(

@@ -3,11 +3,16 @@ import sys
 import pyglet
 from pyglet.window import key
 import numpy as np
+import tensorflow as tf
 
 from gym_duckietown.envs import DuckietownEnv
 from my_utils import EasyObservation, DtRewardWrapper, MyDiscreteWrapperTrain, NoiseWrapper, ResizeWrapper
 
 from DDQN import DDQN
+
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--details', default='', help='used to set the weights name')
@@ -44,7 +49,7 @@ env = MyDiscreteWrapperTrain(env)
 env = ResizeWrapper(env)
 env = DtRewardWrapper(env)
 
-model = DDQN(env, cnn=True)
+model = DDQN(env, cnn=True, activation='relu')
 model.load(weights_name)
 
 obs = env.reset()
