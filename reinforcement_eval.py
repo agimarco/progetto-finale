@@ -7,10 +7,9 @@ import numpy as np
 import gym_duckietown
 from gym_duckietown.envs import DuckietownEnv
 from gym_duckietown.wrappers import DiscreteWrapper
-from my_utils import DtRewardWrapper, ResizeWrapper, MyDiscreteWrapperTrain
+from my_utils import EasyObservation, DtRewardWrapper, MyDiscreteWrapper, MyDiscreteWrapperTrain
 
-from stable_baselines.deepq.policies import MlpPolicy, CnnPolicy
-from stable_baselines import DQN
+from DDQN import DDQN
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--details', default='', help='used to set the weights name')
@@ -27,7 +26,7 @@ parser.add_argument('--map-name', default='loop_empty', help='to use a different
 
 args = parser.parse_args()
 
-weights_name = "/home/marco/my-workspaces/progetto-finale/test/deepq_duckietown_cnn"
+weights_name = "deepq_duckietown"
 if(args.details!=''):
     weights_name += "_"+args.details
 
@@ -41,15 +40,15 @@ env = DuckietownEnv(
     camera_height=480,
     accept_start_angle_deg=4, # start close to straight
     full_transparency=True,
-    distortion=True,
-    randomize_maps_on_reset=False
+    distortion=True
 )
 # discrete actions, 4 value observation and modified reward
 env = MyDiscreteWrapperTrain(env)
+env = EasyObservation(env)
 env = DtRewardWrapper(env)
-env = ResizeWrapper(env)
 
-model = DQN.load(weights_name)
+model = DDQN(env)
+model.load(weights_name)
 
 obs = env.reset()
 env.render()
