@@ -139,7 +139,6 @@ class DDQN():
                 # tensorboard log
                 with summary_writer.as_default():
                   tf.summary.scalar('steps_per_episode', steps_per_episode, episode)
-                  #tf.summary.scalar('val_loss', val_loss_avg, epoch)
                 summary_writer.flush()
                 steps_per_episode = 0
             if step > learning_starts:
