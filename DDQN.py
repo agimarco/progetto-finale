@@ -6,9 +6,9 @@ import tensorflow as tf
 
 # algorithm class
 class DDQN():
-    def __init__(self, env, batch_size=32, learning_rate=1e-3, loss_fn='hub',
-                    activation='elu', cnn=False, mlp_width=32,
-                    discount_factor=0.95, buffer_len=50000,
+    def __init__(self, env, batch_size=32, learning_rate=1e-3, loss_fn='mse',
+                    activation='relu', cnn=False, mlp_width=64,
+                    discount_factor=0.99, buffer_len=50000,
                     initial_epsilon=1, final_epsilon=0.02):
         '''
         Parameters:

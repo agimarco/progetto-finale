@@ -3,15 +3,21 @@ import sys
 import pyglet
 from pyglet.window import key
 import numpy as np
+import tensorflow as tf
 
 from gym_duckietown.envs import DuckietownEnv
 from my_utils import EasyObservation, DtRewardWrapper, MyDiscreteWrapperTrain, NoiseWrapper
 
 from DDQN import DDQN
 
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--details', default='', help='used to set the weights name')
-parser.add_argument('--width', default=32, help='used to set the number of neurons for each layer in a mlp network')
+parser.add_argument('--width', default=64, help='used to set the number of neurons for each layer in a mlp network (32 or 64)')
+parser.add_argument('--activation', default='relu', help='used to set the model activation function (elu or relu)')
 parser.add_argument('--map-name', default='loop_empty', help='to use a different map from that used in training \
     available maps: \n \
         straight_road\n \
@@ -45,7 +51,7 @@ env = MyDiscreteWrapperTrain(env)
 env = EasyObservation(env)
 env = DtRewardWrapper(env)
 
-model = DDQN(env, mlp_width=args.width)
+model = DDQN(env, activation=args.activation, cnn=False, mlp_width=args.width)
 model.load(weights_name)
 
 obs = env.reset()

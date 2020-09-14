@@ -49,7 +49,7 @@ env = MyDiscreteWrapperTrain(env)
 env = ResizeWrapper(env)
 env = DtRewardWrapper(env)
 
-model = DDQN(env, cnn=True, activation='relu')
+model = DDQN(env, activation='relu', cnn=True, mlp_width=32)
 model.load(weights_name)
 
 obs = env.reset()
