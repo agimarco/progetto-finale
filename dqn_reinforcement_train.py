@@ -2,7 +2,7 @@ from gym_duckietown.envs import DuckietownEnv
 from project_utils import PositionObservation, DtRewardWrapper, DiscreteActionWrapperTrain, NoiseWrapper
 import tensorflow as tf
 
-from DDQN import DDQN
+from DQN import DQN
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
@@ -26,7 +26,7 @@ env = DtRewardWrapper(env)
 
 env.reset()
 
-N_TRIALS = 10
+N_TRIALS = 1
 
 # best hyperparameters
 tmsteps = 200000                 
@@ -41,13 +41,14 @@ metric_update = 500                # update metric every 500 steps
 
 for i in range(1, N_TRIALS + 1):
     print("\nTraining number "+str(i))
-    train_details = 'Model_' + str(i)
-    weights = 'weights/ddqn_duckietown_weights' + train_details + '.h5'
+    train_details = 'DQN_NoTarget_Model_' + str(i)
+    weights = 'weights/dqn_duckietown_weights' + train_details + '.h5'
 
-    model = DDQN(env, batch_size=32, learning_rate=lr, loss_fn='mse',
+    model = DQN(env, batch_size=32, learning_rate=lr, loss_fn='mse',
                         activation='relu', cnn=False, mlp_width=64, 
                         discount_factor=discount_factor, buffer_len=buffer_size, 
-                        initial_epsilon=1, final_epsilon=0.02)
+                        initial_epsilon=1, final_epsilon=0.02,
+                        use_target=False)
     model.learn(timesteps=tmsteps, max_ep_steps=max_ep_steps, learning_starts=learning_starts, update_freq=update_freq, tau=0.99,
-                     reset_epsilon=True, epsilon_decay=eps_dec, metric_update=metric_update, tensorboard_log_name='ddqn_duckietown_' + train_details)
+                     reset_epsilon=True, epsilon_decay=eps_dec, metric_update=metric_update, tensorboard_log_name='dqn_duckietown_' + train_details)
     model.save(weights)

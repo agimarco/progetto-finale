@@ -5,11 +5,12 @@ from collections import deque
 import tensorflow as tf
 
 # algorithm class
-class DDQN():
+class DQN():
     def __init__(self, env, batch_size=32, learning_rate=1e-3, loss_fn='mse',
                     activation='relu', cnn=False, mlp_width=64,
                     discount_factor=0.99, buffer_len=50000,
-                    initial_epsilon=1, final_epsilon=0.02):
+                    initial_epsilon=1, final_epsilon=0.02,
+                    use_target=True):
         '''
         Parameters:
         env: the environment to train on
@@ -23,7 +24,9 @@ class DDQN():
         buffer_len: maximum length used for replay buffer
         initial_epsilon: initial value of epsilon
         final_epsilon: final value of epsilon (always final_epsilon probability of random action)
+        use_target: set this to False to not use the target network
         '''
+        self.use_target = use_target
         self.batch_size = batch_size
         self.discount_factor = discount_factor
         self.optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
@@ -81,12 +84,14 @@ class DDQN():
         batch = [self.replay_buffer[i] for i in indices]
         states, actions, rewards, next_states, dones = [
             np.array([sample[elem_index] for sample in batch]) for elem_index in range(5)]
-        # model network for selecting the action
-        best_actions = np.argmax(self.model.predict(next_states), axis=1)
-        mask = tf.one_hot(best_actions, self.output_shape).numpy()
-        # target network for evaluating the action
-        target_values = (rewards + (1 - dones) * self.discount_factor * (self.target.predict(next_states) * mask).sum(axis=1))
-        target_values = target_values.reshape(-1, 1)    
+        # using a target network or not
+        if self.use_target:
+            max_next_values = np.max(self.target.predict(next_states), axis=1)
+        else:
+            max_next_values = np.max(self.model.predict(next_states), axis=1)
+        target_values = (rewards +
+                       (1 - dones) * self.discount_factor * max_next_values)
+        target_values = target_values.reshape(-1, 1)
         mask = tf.one_hot(actions, self.output_shape)
         with tf.GradientTape() as tape:
             values = tf.reduce_sum(self.model(states) * mask, axis=1, keepdims=True)
@@ -160,14 +165,14 @@ class DDQN():
                 summary_writer.flush()
             # target network update
             # soft updates
-            if update_freq==1 and step > learning_starts:
+            if self.use_target and update_freq==1 and step > learning_starts:
                 target_weights = self.target.get_weights()
                 online_weights = self.model.get_weights()
                 for index in range(len(target_weights)):
                     target_weights[index] = tau * target_weights[index] + (1-tau) * online_weights[index]
                 self.target.set_weights(target_weights)
             # update target every update_freq steps
-            if update_freq!=1 and step % update_freq == 0:
+            if self.use_target and update_freq!=1 and step % update_freq == 0:
                 self.target.set_weights(self.model.get_weights())
             # writing metrics
             if step % metric_update == 0:

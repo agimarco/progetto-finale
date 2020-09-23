@@ -1,5 +1,5 @@
 from gym_duckietown.envs import DuckietownEnv
-from my_utils import EasyObservation, DtRewardWrapper, MyDiscreteWrapperTrain, NoiseWrapper, ResizeWrapper
+from project_utils import DtRewardWrapper, DiscreteActionWrapperTrain, NoiseWrapper, ResizeWrapper
 import tensorflow as tf
 
 from DDQN import DDQN
@@ -23,7 +23,7 @@ env = DuckietownEnv(
 # discrete actions, 4 value observation and modified reward
 env = NoiseWrapper(env)
 env = ResizeWrapper(env)
-env = MyDiscreteWrapperTrain(env)
+env = DiscreteActionWrapperTrain(env)
 env = DtRewardWrapper(env)
 
 env.reset()

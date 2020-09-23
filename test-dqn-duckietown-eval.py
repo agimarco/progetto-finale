@@ -3,18 +3,15 @@ import sys
 import pyglet
 from pyglet.window import key
 import numpy as np
+
 import tensorflow as tf
+from tensorflow import keras
 
+import gym_duckietown
 from gym_duckietown.envs import DuckietownEnv
-from gym_duckietown.simulator import Simulator
+from gym_duckietown.wrappers import DiscreteWrapper
+from my_utils import EasyObservation, DtRewardWrapper, MyDiscreteWrapperTrain, NoiseWrapper
 
-from project_utils import DtRewardWrapper, DiscreteActionWrapperTrain, NoiseWrapper, ResizeWrapper
-
-from DDQN import DDQN
-
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--details', default='', help='used to set the weights name')
@@ -31,7 +28,7 @@ parser.add_argument('--map-name', default='loop_empty', help='to use a different
 
 args = parser.parse_args()
 
-weights_name = "weights/ddqn_duckietown_cnn_weights" + args.details + ".h5"
+weights_name = 'weights/test-dqn-duckietown'+args.details+'.h5'
 
 # Create the environment 
 env = DuckietownEnv(
@@ -43,17 +40,24 @@ env = DuckietownEnv(
     camera_height=480,
     accept_start_angle_deg=4, # start close to straight
     full_transparency=True,
-    distortion=False,
-    graphics=True,
+    distortion=True
 )
 # discrete actions, 4 value observation and modified reward
-env = NoiseWrapper(env)
-env = DiscreteActionWrapperTrain(env)
-env = ResizeWrapper(env)
+#env = NoiseWrapper(env)
+env = MyDiscreteWrapperTrain(env)
+env = EasyObservation(env)
 env = DtRewardWrapper(env)
 
-model = DDQN(env, cnn=True)
-model.load(weights_name)
+input_shape = env.observation_space.shape
+n_outputs = env.action_space.n
+
+model = keras.models.Sequential([
+    keras.layers.Dense(32, activation="elu", input_shape=input_shape),
+    keras.layers.Dense(32, activation="elu"),
+    keras.layers.Dense(n_outputs)
+])
+
+model.load_weights(weights_name)
 
 obs = env.reset()
 env.render()
@@ -76,7 +80,8 @@ def update(dt):
     movement/stepping and redrawing
     """
     global obs 
-    action = model.predict(obs)
+    Q_values = model.predict(obs[np.newaxis])
+    action = np.argmax(Q_values[0])
     obs, reward, done, info = env.step(action)
     print(f'action = {action} step_count = {env.unwrapped.step_count}, reward={reward:.3f}')
     '''
@@ -96,7 +101,6 @@ def update(dt):
         obs = env.reset()
         env.render()
     env.render()
-    #env.render('free_cam')
 
 pyglet.clock.schedule_interval(update, 1.0 / env.unwrapped.frame_rate)
 
@@ -104,4 +108,3 @@ pyglet.clock.schedule_interval(update, 1.0 / env.unwrapped.frame_rate)
 pyglet.app.run()
 
 env.close()
-

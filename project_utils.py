@@ -3,18 +3,19 @@ import gym
 from gym import spaces
 from gym_duckietown.envs import DuckietownEnv
 
-class EasyObservation(gym.ObservationWrapper):
+class PositionObservation(gym.ObservationWrapper):
     def __init__(self, env=None):
-        super(EasyObservation, self).__init__(env)
+        super(PositionObservation, self).__init__(env)
         self.observation_space = spaces.Box(
-            low=np.array([-0.5,0,-90,-np.pi/2]),
-            high=np.array([0.5,1,90,np.pi/2]),
-            shape=(4,),
+            low=np.array([-0.5,0,-90]),             #,-np.pi/2
+            high=np.array([0.5,1,90]),              #,np.pi/2
+            shape=(3,),
             dtype=np.float32
         )
     def observation(self, observation):
         obs = self.get_agent_info()
         obs = obs['Simulator']['lane_position']
+        obs = dict((k,obs[k]) for k in ('dist', 'dot_dir', 'angle_deg'))
         obs = list(obs.values())
         return np.array(obs)
 
@@ -32,7 +33,11 @@ class DtRewardWrapper(gym.RewardWrapper):
 
         return reward
 
-class MyDiscreteWrapper(gym.ActionWrapper):
+TURN_VEL = 0.2
+TURN_ANGLE = 1
+STRAIGHT_VEL = 0.6
+
+class DiscreteActionWrapper(gym.ActionWrapper):
     """
     Duckietown environment with discrete actions (left, right, forward)
     instead of continuous control
@@ -40,33 +45,34 @@ class MyDiscreteWrapper(gym.ActionWrapper):
 
     def __init__(self, env):
         gym.ActionWrapper.__init__(self, env)
-        self.action_space = spaces.Discrete(5)
+        self.action_space = spaces.Discrete(3)  # 3 since we need also to use it in a trained model
     
     # velocity and steering angle
     def action(self, action):
         # Turn left                         
         if action == 0:
-            vels = [0.6, +1.0]              
+            vels = [TURN_VEL, TURN_ANGLE]              
         # Turn right
         elif action == 1:
-            vels = [0.6, -1.0]              
+            vels = [TURN_VEL, -TURN_ANGLE]              
         # Go forward
         elif action == 2:
-            vels = [0.7, 0.0]               
+            vels = [STRAIGHT_VEL, 0.0]               
         # stationary
         elif action == 3:
             vels = [0.0, 0.0]              
         # go backwards
         elif action == 4:
-            vels = [-0.5, 0.0]             
+            vels = [-STRAIGHT_VEL, 0.0]             
         else:
             assert False, "unknown action"
         return np.array(vels)
 
-class MyDiscreteWrapperTrain(gym.ActionWrapper):
+class DiscreteActionWrapperTrain(gym.ActionWrapper):
     """
     Duckietown environment with discrete actions (left, right, forward)
     instead of continuous control
+    Used for training with three actions
     """
 
     def __init__(self, env):
@@ -76,13 +82,13 @@ class MyDiscreteWrapperTrain(gym.ActionWrapper):
     def action(self, action):
         # Turn left
         if action == 0:
-            vels = [0.2, +1.0] #[0.2, +1.0]              #original: [0.6, +1.0]
+            vels = [TURN_VEL, TURN_ANGLE] #[0.2, +1.0]              #original: [0.6, +1.0]
         # Turn right
         elif action == 1:
-            vels = [0.2, -1.0] #[0.2, -1.0]              #original: [0.6, -1.0]
+            vels = [TURN_VEL, -TURN_ANGLE] #[0.2, -1.0]              #original: [0.6, -1.0]
         # Go forward
         elif action == 2:   
-            vels = [0.6, 0.0] #[0.3, 0.0]               #original: [0.7, 0.0]
+            vels = [STRAIGHT_VEL, 0.0] #[0.3, 0.0]               #original: [0.7, 0.0]
         else:
             assert False, "unknown action"
         return np.array(vels)
@@ -92,11 +98,8 @@ class NoiseWrapper(gym.ActionWrapper):
         gym.ActionWrapper.__init__(self, env)
 
     def action(self, action):
-        # (according to vel: 0.2, angle: 1)
-        # 5% noise: 0.01, 0.05
-        # 1% noise: 0.002, 0.01
-        action[0] += np.random.normal(0, 0.002)
-        action[1] += np.random.normal(0, 0.01)
+        action[0] += np.random.normal(0, TURN_VEL * (1/100)) # 1% noise vel*1%
+        action[1] += np.random.normal(0, TURN_ANGLE * (1/100))   # 1% noise angle*1%
         return action
 
 class ResizeWrapper(gym.ObservationWrapper):
@@ -112,7 +115,7 @@ class ResizeWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         from PIL import Image
-        return np.array(Image.fromarray(observation).resize((160,120)))
+        return np.array(Image.fromarray(observation).resize(self.shape[0:2][::-1])) #[::-1] to reverse
 
 class NormalizeWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):

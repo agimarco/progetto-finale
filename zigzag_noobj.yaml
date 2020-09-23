@@ -1,0 +1,87 @@
+# This map is a closed loop: it has multiple left and right turns but no
+# intersections. The map also includes many white distractor objects trying
+# to confuse the detection of road edges. The purpose of this map is to act
+# as a torture-test for lane-following.
+
+tiles:
+- [floor, floor     , floor       , floor       , floor       , floor   , floor       , floor, floor]
+- [floor, curve_left/W, curve_left/N  , floor       , curve_left/W  , straight/W, straight/W    , curve_left/N, floor]
+- [floor, straight/S  , curve_right/W , straight/W    , curve_right/S , floor   , curve_right/N , curve_left/E, floor]
+- [floor, straight/S  , floor       , floor       , floor       , floor   , straight/N    , floor, floor]
+- [floor, straight/S  , floor       , floor       , curve_right/N , straight/E, curve_left/E  , floor, floor]
+- [floor, straight/S  , floor       , curve_right/N , curve_left/E  , floor   , floor       , floor, floor]
+- [floor, straight/S  , floor       , straight/N    , floor       , floor   , floor       , floor, floor]
+- [floor, curve_left/S, straight/E    , curve_left/E  , floor       , floor   , floor       , floor, floor]
+- [floor, floor     , floor       , floor       , floor       , floor   , floor       , floor, floor]
+
+objects:
+
+# Top row
+
+# Right-hand side
+
+# Bottom row
+
+# Miscellaneous objects
+- kind: cone
+  pos: [0, 0]
+  rotate: 90
+  height: 0.08
+
+- kind: cone
+  pos: [0, 9]
+  rotate: 90
+  height: 0.08
+
+- kind: cone
+  pos: [9, 0]
+  rotate: 90
+  height: 0.08
+
+- kind: cone
+  pos: [9, 9]
+  rotate: 90
+  height: 0.08
+  
+- kind: cone
+  pos: [0, 4.5]
+  rotate: 90
+  height: 0.08
+
+- kind: cone
+  pos: [4.5, 0]
+  rotate: 90
+  height: 0.08
+
+- kind: cone
+  pos: [9, 4.5]
+  rotate: 90
+  height: 0.08
+
+- kind: cone
+  pos: [4.5, 9]
+  rotate: 90
+  height: 0.08
+  
+#- kind: duckie
+#  pos: [0.5, 0.5]
+#  rotate: 10
+#  height: 0.06
+
+#- kind: duckie
+#  pos: [0.5, 8.5]
+#  rotate: 10
+#  height: 0.06
+
+#- kind: duckie
+#  pos: [8.5,0.5]
+#  rotate: 10
+#  height: 0.06
+
+#- kind: duckie
+#  pos: [8.5,8.5]
+#  rotate: 10
+#  height: 0.06
+
+tile_size: 0.585
+
