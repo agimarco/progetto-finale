@@ -42,12 +42,12 @@ env = DuckietownEnv(
     domain_rand=0,
     accept_start_angle_deg=4, # start close to straight
     full_transparency=True,
-    draw_curve=False, #args.top,
+    draw_curve=True, #args.top,
     draw_bbox=args.bbox,
     distortion=False,
     graphics=True,
     draw_traj=args.top,
-    free_camera=args.top,
+    free_camera=False,#args.top,
     show_info=False,
 )
 # discrete actions, 4 value observation and modified reward

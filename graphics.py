@@ -281,7 +281,7 @@ def bezier_draw(cps, n = 20, red=False):
     if red:
         gl.glColor3f(1, 0, 0)
     else:
-        gl.glColor3f(0, 0, 1)
+        gl.glColor3f(0.2, 1, 1)
 
     for i, p in enumerate(pts):
         p = [p[0], 0.04, p[2]]

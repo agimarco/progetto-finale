@@ -39,8 +39,10 @@ class DQN():
         self.output_shape = env.action_space.n
         self.model = tf.keras.Sequential()
 
+        self.cnn = cnn
+
         # convolutional neural network
-        if cnn:
+        if self.cnn:
             self.model.add(tf.keras.layers.Conv2D(32, kernel_size=8, strides=4, activation=activation, input_shape=self.input_shape))
             self.model.add(tf.keras.layers.Conv2D(64, kernel_size=4, strides=2, activation=activation))
             self.model.add(tf.keras.layers.Conv2D(64, kernel_size=3, strides=1, activation=activation))
@@ -49,7 +51,7 @@ class DQN():
             self.model.add(tf.keras.layers.Dense(self.output_shape))
             
         # multi layered perceptron
-        if not cnn:
+        if not self.cnn:
             self.model.add(tf.keras.layers.Dense(mlp_width, activation=activation, input_shape=self.input_shape))
             self.model.add(tf.keras.layers.Dense(mlp_width, activation=activation))
             self.model.add(tf.keras.layers.Dense(self.output_shape))
@@ -84,6 +86,12 @@ class DQN():
         batch = [self.replay_buffer[i] for i in indices]
         states, actions, rewards, next_states, dones = [
             np.array([sample[elem_index] for sample in batch]) for elem_index in range(5)]
+        # normalize if using cnn
+        if self.cnn:
+            obs_lo = self.env.observation_space.low[0, 0, 0]
+            obs_hi = self.env.observation_space.high[0, 0, 0]
+            states = (states - obs_lo) / (obs_hi - obs_lo)
+            next_states = (next_states - obs_lo) / (obs_hi - obs_lo)
         # using a target network or not
         if self.use_target:
             max_next_values = np.max(self.target.predict(next_states), axis=1)
@@ -102,7 +110,8 @@ class DQN():
 
     # training loop
     def learn(self, timesteps=50000, max_ep_steps=0, learning_starts=1000, update_freq=1, tau=0.99,
-                reset_epsilon=True, epsilon_decay=2e-4, metric_update=100, tensorboard_log_name="training"):
+                reset_epsilon=True, epsilon_decay=2e-4, metric_update=100, tensorboard_log_name="training",
+                cool_gpu=0):
         '''
         Parameters:
         timesteps: number of training steps it performs
@@ -186,9 +195,17 @@ class DQN():
                 metrics['rewards_p'].clear()
                 metrics['losses_p'].clear()
                 metrics['values_p'].clear()
+            # if using GPU stops for 30 seconds every 500 steps to avoid overheating
+            if cool_gpu > 0 and step % cool_gpu == 0:  
+                time.sleep(30)
         self.model.set_weights(best_weights)
 
-    def predict(self, state):
+    def predict(self, state, Model5=False):
+        # normalize if using cnn
+        if self.cnn and not Model5:
+            obs_lo = self.env.observation_space.low[0, 0, 0]
+            obs_hi = self.env.observation_space.high[0, 0, 0]
+            state = (state - obs_lo) / (obs_hi - obs_lo)
         Q_values = self.model.predict(state[np.newaxis])
         action = np.argmax(Q_values[0])
         q_value = np.max(Q_values[0])
